@@ -1,0 +1,38 @@
+name: Test
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  test:
+    env:
+      MIX_ENV: test
+      STRIPE_MOCK_VERSION: 0.144.0
+    runs-on: ubuntu-latest
+    name: Test (OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}})
+    strategy:
+       matrix:
+         elixir: ['1.14']
+         otp: [25]
+    services:
+       stripe-mock:
+         image: stripe/stripe-mock:v0.144.0
+         ports:
+           - 12111:12111
+           - 12112:12112
+    steps:
+    - name: Clone code
+      uses: actions/checkout@v2
+    - name: Setup Elixir and Erlang
+      uses: erlef/setup-beam@v1
+      with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+    - name: Mix Dependencies
+      run: mix deps.get
+    - name: Test
+      run: mix test
