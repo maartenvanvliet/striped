@@ -12,7 +12,7 @@ defmodule Stripe do
 
   def request(:get = method, path, client, params) do
     query = (params || %{}) |> UriQuery.params() |> URI.encode_query()
-    url = URI.append_query(URI.parse(client.base_url <> path), query) |> URI.to_string() |> IO.inspect
+    url = URI.append_query(URI.parse(client.base_url <> path), query) |> URI.to_string()
 
     headers =
       [
