@@ -15,9 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Test (OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}})
     strategy:
-       matrix:
-         elixir: ['1.14']
-         otp: [25]
+      matrix:
+        include:
+          - elixir: 1.11.x
+            otp: 25.x
+            check_formatted: true
     services:
        stripe-mock:
          image: stripe/stripe-mock:v0.144.0
@@ -32,7 +34,12 @@ jobs:
       with:
           otp-version: ${{ matrix.otp }}
           elixir-version: ${{ matrix.elixir }}
-    - name: Mix Dependencies
-      run: mix deps.get
-    - name: Test
+    - name: Install Dependencies
+      run: mix deps.get && mix deps.unlock --check-unused
+    - name: Compile project
+      run: mix compile --warnings-as-errors
+    - name: Check formatting
+      if: matrix.check_formatted
+      run: mix format --check-formatted
+    - name: Run tests
       run: mix test
