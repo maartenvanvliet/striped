@@ -6,8 +6,9 @@ defmodule Stripe do
              |> Enum.fetch!(1)
 
   use Stripe.OpenApi,
-    path: [:code.priv_dir(:striped), "openapi", "spec3.sdk.json"]
-    |> Path.join(),
+    path:
+      [:code.priv_dir(:striped), "openapi", "spec3.sdk.json"]
+      |> Path.join(),
     base_url: "https://api.stripe.com"
 
   def request(:get = method, path, client, params) do

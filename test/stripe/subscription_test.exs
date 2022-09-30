@@ -68,11 +68,10 @@ defmodule Stripe.SubscriptionsTest do
       client =
         Stripe.new(
           api_key: "sk_test_123",
-          base_url: "http://localhost:12111",
+          base_url: "http://localhost:12111"
         )
 
-      assert {:ok, %Stripe.List{} } = Stripe.Subscription.list(client, %{status: "active"})
-
+      assert {:ok, %Stripe.List{}} = Stripe.Subscription.list(client, %{status: "active"})
     end
   end
 end

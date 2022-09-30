@@ -14,8 +14,7 @@ defmodule Striped.MixProject do
       source_url: @url,
       homepage_url: @url,
       name: "Striped",
-      description:
-        "Stripe Api SDK generated from OpenApi definitions.",
+      description: "Stripe Api SDK generated from OpenApi definitions.",
       package: [
         maintainers: ["Maarten van Vliet"],
         licenses: ["MIT"],

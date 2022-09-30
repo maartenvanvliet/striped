@@ -66,7 +66,9 @@ defmodule Stripe.OpenApi.Phases.Compile do
                       unquote_splicing(argument_specs),
                       params :: map()
                     ) ::
-                      {:ok, unquote(success_response_spec)} | {:error, Stripe.ApiErrors.t()} | {:error, term()}
+                      {:ok, unquote(success_response_spec)}
+                      | {:error, Stripe.ApiErrors.t()}
+                      | {:error, term()}
               def unquote(function_name)(
                     client,
                     unquote_splicing(argument_names),
@@ -83,7 +85,9 @@ defmodule Stripe.OpenApi.Phases.Compile do
               end
             else
               @spec unquote(function_name)(client :: term(), unquote_splicing(argument_specs)) ::
-                      {:ok, unquote(success_response_spec)} | {:error, Stripe.ApiErrors.t()} | {:error, term()}
+                      {:ok, unquote(success_response_spec)}
+                      | {:error, Stripe.ApiErrors.t()}
+                      | {:error, term()}
               def unquote(function_name)(
                     client,
                     unquote_splicing(argument_names)

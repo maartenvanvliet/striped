@@ -66,5 +66,4 @@ defmodule Stripe.CustomerTest do
       assert {:ok, %Stripe.DeletedCustomer{}} = Stripe.Customer.delete(client, "cus_234")
     end
   end
-
 end
