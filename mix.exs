@@ -1,6 +1,8 @@
 defmodule Striped.MixProject do
   use Mix.Project
 
+  @url "https://github.com/maartenvanvliet/striped"
+
   def project do
     [
       app: :striped,
@@ -9,7 +11,21 @@ defmodule Striped.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      source_url: @url,
+      homepage_url: @url,
+      name: "Striped",
+      description:
+        "Stripe Api SDK generated from OpenApi definitions.",
+      package: [
+        maintainers: ["Maarten van Vliet"],
+        licenses: ["MIT"],
+        links: %{"GitHub" => @url},
+        files: ~w(LICENSE README.md lib priv mix.exs .formatter.exs)
+      ],
       docs: [
+        main: "Stripe",
+        source_url: @url,
+        canonical: "http://hexdocs.pm/striped",
         groups_for_modules: [
           "Core Resources": [
             Stripe.Balance,

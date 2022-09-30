@@ -16,5 +16,27 @@ def deps do
 end
 ```
 
+## Usage
 
+```elixir
+client = Stripe.new(api_key: "sk_test_123")
+{:ok, %Stripe.Customer{}} = Stripe.Customer.retrieve(client, "cus123")
+
+{:ok, %Stripe.Customer{}} =
+               Stripe.Customer.create(client, %{
+                 description: "Test description"
+               })
+
+```
+
+For the exact parameters you can consult the Stripe docs.
+
+### Errors
+Stripe errors can be found in the `Stripe.ApiErrors` struct. 
+Network errors etc. will be found in the error term.
+
+```elixir
+{:error, %Stripe.ApiErrors{}} =
+               Stripe.Customer.retrieve(client, "bogus")
+```              
 
