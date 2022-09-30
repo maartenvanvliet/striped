@@ -25,10 +25,5 @@ defmodule Stripe.TaxIdTest do
   test ~f{&Stripe.Subscription.retrieve/2} do
     client = Stripe.new(api_key: "sk_test_123", base_url: "http://localhost:12111")
     assert {:ok, %Stripe.List{} = l} = Stripe.TaxId.list(client, "cus123", %{expand: ["customer"]})
-    IO.inspect(l)
-
-    # Stripe.List.resource(fn ->
-    #   Stripe.TaxId.list(client, "cus123")
-    # end)
   end
 end

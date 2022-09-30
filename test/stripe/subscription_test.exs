@@ -71,8 +71,8 @@ defmodule Stripe.SubscriptionsTest do
           base_url: "http://localhost:12111",
         )
 
-      assert {:ok, %Stripe.List{} = l} = Stripe.Subscription.list(client, %{status: "active"})
-      IO.inspect(l)
+      assert {:ok, %Stripe.List{} } = Stripe.Subscription.list(client, %{status: "active"})
+
     end
   end
 end
