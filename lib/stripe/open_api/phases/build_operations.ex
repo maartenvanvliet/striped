@@ -33,7 +33,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
               in: "body",
               name: key,
               required: false,
-              schema: build_schema(value)
+              schema: build_schema(value, key)
             }
           end)
 
@@ -97,7 +97,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
         in: &1["in"],
         name: &1["name"],
         required: &1["required"],
-        schema: build_schema(&1["schema"])
+        schema: build_schema(&1["schema"], &1["name"])
       }
     )
   end
@@ -115,7 +115,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
   defp build_schema(%{"type" => "array"} = schema, name) do
     %OpenApiGen.Blueprint.Parameter.Schema{
       type: schema["type"],
-      items: build_schema(schema["items"]),
+      items: build_schema(schema["items"], name),
       name: name
     }
   end
@@ -132,7 +132,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
   defp build_schema(%{"anyOf" => any_of} = _schema, name) do
     %OpenApiGen.Blueprint.Parameter.Schema{
       type: :any_of,
-      any_of: any_of |> Enum.map(&build_schema(&1)),
+      any_of: any_of |> Enum.map(&build_schema(&1, name)),
       name: name
     }
   end

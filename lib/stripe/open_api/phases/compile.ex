@@ -52,6 +52,30 @@ defmodule Stripe.OpenApi.Phases.Compile do
 
           success_response_spec = return_spec(operation_definition.success_response)
 
+          params =
+            cond do
+              operation_definition.query_parameters != [] -> operation_definition.query_parameters
+              operation_definition.body_parameters != [] -> operation_definition.body_parameters
+              true -> []
+            end
+
+          {param_specs, acc} =
+            params
+            |> Enum.map_reduce(MapSet.new(), fn p, acc ->
+              {spec, acc} =  build_param_spec(p.schema, component.expandable_fields, acc)
+              res = if p.required do
+                {quote do
+                   unquote(p.name |> String.to_atom())
+                 end, spec}
+              else
+                {quote do
+                   optional(unquote(p.name |> String.to_atom()))
+                 end, spec}
+              end
+              {res, acc}
+            end)
+
+            IO.inspect(acc)
           quote do
             if unquote(operation_definition.deprecated) do
               @deprecated "Stripe has deprecated this operation"
@@ -64,11 +88,12 @@ defmodule Stripe.OpenApi.Phases.Compile do
               @spec unquote(function_name)(
                       client :: term(),
                       unquote_splicing(argument_specs),
-                      params :: map()
+                      params
                     ) ::
                       {:ok, unquote(success_response_spec)}
                       | {:error, Stripe.ApiErrors.t()}
                       | {:error, term()}
+                    when params: %{unquote_splicing(param_specs)}
               def unquote(function_name)(
                     client,
                     unquote_splicing(argument_names),
@@ -232,6 +257,99 @@ defmodule Stripe.OpenApi.Phases.Compile do
   defp build_spec(_, _) do
     quote do
       term
+    end
+  end
+
+  defp build_param_spec(%{type: "string"}, _, acc) do
+    {quote do
+      binary
+    end, acc}
+  end
+
+  defp build_param_spec(%{type: "integer"}, _, acc) do
+    {quote do
+      integer
+    end, acc}
+  end
+
+  defp build_param_spec(%{type: "number"}, _, acc) do
+    {quote do
+      integer | float
+    end, acc}
+  end
+
+  defp build_param_spec(%{type: "boolean"}, _, acc) do
+    {quote do
+      boolean
+    end, acc}
+  end
+
+  defp build_param_spec(%{type: "object", properties: properties, name: name}, expandable_fields, acc) do
+    specs =
+      properties
+      |> Enum.map(fn s ->
+        {quote do
+           optional(unquote(s.name |> String.to_atom()))
+         end, build_param_spec(s, expandable_fields, acc)}
+      end)
+
+    quote do
+      %{
+        unquote_splicing(specs)
+      }
+    end
+
+    if name do
+      {quote do
+        unquote(String.to_atom(name)).t
+      end, MapSet.put(acc, {String.to_atom(name), specs})}
+    else
+      {quote do
+        %{
+          unquote_splicing(specs)
+        }
+      end, acc}
+    end
+
+  end
+
+  defp build_param_spec(%{type: :any_of, any_of: [type]}, expandable_fields, acc) do
+    build_param_spec(type, expandable_fields, acc)
+  end
+
+  defp build_param_spec(%{type: :any_of, any_of: [any_of | tail]} = type, expandable_fields, acc) do
+    type = Map.put(type, :any_of, tail)
+
+    {any_of, acc1} = build_param_spec(any_of, expandable_fields, acc)
+    {tail, acc} = build_param_spec(type, expandable_fields, acc)
+    {{:|, [],
+     [any_of, tail]}, MapSet.union(acc1, acc)}
+  end
+
+  defp build_param_spec(%{type: "array", items: schema, name: "expand"}, expandable_fields, acc) do
+    {quote do
+      [binary | unquote(expandable_fields(expandable_fields))]
+    end, acc}
+  end
+
+  defp build_param_spec(%{type: "array", items: schema}, expandable_fields, acc) do
+    {spec, acc} = build_param_spec(schema, expandable_fields, acc)
+    {quote do
+      [unquote(spec)]
+    end, acc}
+  end
+
+  defp expandable_fields([]) do
+    []
+  end
+
+  defp expandable_fields([field]) do
+    field
+  end
+
+  defp expandable_fields([field | tail]) do
+    quote do
+      unquote(field) | unquote(expandable_fields(tail))
     end
   end
 
