@@ -25,8 +25,10 @@ defmodule Stripe.SubscriptionsTest do
   test ~f{&Stripe.Subscription.retrieve/2} do
     client = Stripe.new(api_key: "sk_test_123", base_url: "http://localhost:12111")
 
-    assert {:ok, %Stripe.Subscription{}} =
-             Stripe.Subscription.retrieve(client, "sub123", %{expand: ["customer"]})
+    assert {:ok, %Stripe.Subscription{} = subscription} =
+             Stripe.Subscription.retrieve(client, "sub123", %{expand: [:customer]})
+
+    assert %Stripe.Customer{} = subscription.customer
   end
 
   describe ~f{&Stripe.Subscription.create/2} do
