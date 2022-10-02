@@ -11,32 +11,20 @@ defmodule Stripe do
       |> Path.join(),
     base_url: "https://api.stripe.com"
 
-  def request(:get = method, path, client, params) do
+  def request(method, path, client, params) when method in [:get, :delete] do
     query = (params || %{}) |> UriQuery.params() |> URI.encode_query()
-    url = URI.append_query(URI.parse(client.base_url <> path), query) |> URI.to_string()
+    url = URI.parse(client.base_url <> path) |> URI.append_query(query) |> URI.to_string()
 
-    headers =
-      [
-        {"user-agent", "striped"},
-        {"authorization", "Bearer #{client.api_key}"}
-      ]
-      |> maybe_concat(["stripe-version: #{client.version}"], client.version != nil)
+    headers = build_headers(client)
 
-    body = ""
-    opts = []
-
-    do_request(client, method, url, headers, body, opts)
+    do_request(client, method, url, headers, "", [])
   end
 
-  def request(method, path, client, params) do
+  def request(:post = method, path, client, params) do
     url = client.base_url <> path
 
     headers =
-      [
-        {"user-agent", "striped"},
-        {"authorization", "Bearer #{client.api_key}"}
-      ]
-      |> maybe_concat(["stripe-version: #{client.version}"], client.version != nil)
+      build_headers(client)
       |> maybe_concat(
         ["Idempotency-Key: #{generate_idempotency_key()}"],
         client.idempotency_key == nil
@@ -55,6 +43,14 @@ defmodule Stripe do
         _status -> {:error, Jason.decode!(resp.body) |> build_error()}
       end
     end
+  end
+
+  defp build_headers(client) do
+    [
+      {"user-agent", client.user_agent},
+      {"authorization", "Bearer #{client.api_key}"}
+    ]
+    |> maybe_concat(["stripe-version: #{client.version}"], client.version != nil)
   end
 
   defp generate_idempotency_key do
@@ -87,16 +83,39 @@ defmodule Stripe do
     struct!(struct, map)
   end
 
+  defp convert_struct(struct, object) do
+    struct_keys = Map.keys(struct.__struct__) |> List.delete(:__struct__)
+
+    processed_map =
+      struct_keys
+      |> Enum.reduce(%{}, fn key, acc ->
+        string_key = to_string(key)
+
+        converted_value =
+          case string_key do
+            _ -> Map.get(object, string_key) |> convert_value()
+          end
+
+        Map.put(acc, key, converted_value)
+      end)
+
+    struct!(struct, processed_map)
+  end
+
+  defp convert_object(struct, object) do
+    if known_struct?(struct) do
+      convert_struct(struct, object)
+    else
+      convert_map(object)
+    end
+  end
+
   defp convert_value(%{"object" => type, "deleted" => _} = object) do
-    struct = object_type_to_struct(type, deleted: true)
-    map = convert_map(object)
-    struct!(struct, map)
+    type |> object_type_to_struct(deleted: true) |> convert_object(object)
   end
 
   defp convert_value(%{"object" => type} = object) do
-    struct = object_type_to_struct(type)
-    map = convert_map(object)
-    struct!(struct, map)
+    type |> object_type_to_struct() |> convert_object(object)
   end
 
   defp convert_value(map) when is_map(map) do
@@ -109,6 +128,10 @@ defmodule Stripe do
 
   defp convert_value(value) do
     value
+  end
+
+  defp known_struct?(struct) do
+    function_exported?(struct, :__struct__, 0)
   end
 
   defp object_type_to_struct(object, opts \\ [])

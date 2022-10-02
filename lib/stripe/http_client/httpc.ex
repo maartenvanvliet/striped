@@ -27,6 +27,7 @@ defmodule Stripe.HTTPClient.HTTPC do
     case :httpc.request(method, request, [], body_format: :binary) do
       {:ok, {{_, status, _}, headers, body}} ->
         headers = for {k, v} <- headers, do: {List.to_string(k), List.to_string(v)}
+
         {:ok, %{status: status, headers: headers, body: body}}
 
       {:error, error} ->

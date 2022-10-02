@@ -60,7 +60,7 @@ defmodule Stripe.SubscriptionsTest do
           http_client: Stripe.HTTPClient.HTTPC
         )
 
-      assert {:error, %Stripe.ApiErrors{} = i} = Stripe.Subscription.create(client, %{})
+      assert {:error, %Stripe.ApiErrors{}} = Stripe.Subscription.create(client, %{})
     end
   end
 

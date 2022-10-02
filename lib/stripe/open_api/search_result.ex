@@ -3,6 +3,8 @@ defmodule Stripe.SearchResult do
   Some top-level API resource have support for retrieval via "search" API methods. For example, you can search charges, search customers, and search subscriptions.
 
   Stripe's search API methods utilize cursor-based pagination via the `page` request parameter and `next_page` response parameter. For example, if you make a search request and receive "next_page": "pagination_key" in the response, your subsequent call can include page=pagination_key to fetch the next page of results.
+
+  See https://stripe.com/docs/search for more information.
   """
 
   @type value :: term

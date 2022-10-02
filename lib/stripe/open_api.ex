@@ -15,6 +15,8 @@ defmodule Stripe.OpenApi do
         :version,
         :api_key,
         idempotency_key: nil,
+        max_network_retries: 3,
+        user_agent: "striped",
         base_url: unquote(opts[:base_url]),
         http_client: Stripe.HTTPClient.HTTPC
       ]
