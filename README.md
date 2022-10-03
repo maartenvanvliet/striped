@@ -50,5 +50,3 @@ version by passing the `:version` option to the client.
   * File Uploads currently don't work. 
   * TypeSpecs for functions are not complete. Automatically generating them leads to very verbose specs. This will need some additional work to be more idiomatic.
   * Connected Accounts are not supported yet. 
-
-

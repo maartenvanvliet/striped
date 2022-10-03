@@ -16,7 +16,8 @@ defmodule Stripe.BackwardsCompatibleTest do
            "object":"subscription",
            "unknown_attr": null
          }
-         """
+         """,
+         headers: []
        }}
     end
   end
@@ -46,7 +47,8 @@ defmodule Stripe.BackwardsCompatibleTest do
            "object":"unknown_object",
            "unknown_attr": null
          }
-         """
+         """,
+         headers: []
        }}
     end
   end

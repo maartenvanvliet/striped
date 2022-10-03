@@ -9,22 +9,22 @@ defmodule Stripe.HTTPClient.HTTPC do
   end
 
   @impl true
-  def request(:post = method, url, headers, body, []) do
+  def request(:post = method, url, headers, body, opts) do
     headers = for {k, v} <- headers, do: {String.to_charlist(k), String.to_charlist(v)}
-    request = {String.to_charlist(url), headers, 'application/x-www-form-urlencoded', body}
+    request = {String.to_charlist(url), headers, ~C(application/x-www-form-urlencoded), body}
 
-    do_request(method, request)
+    do_request(method, request, opts)
   end
 
-  def request(method, url, headers, _body, []) do
+  def request(method, url, headers, _body, opts) do
     headers = for {k, v} <- headers, do: {String.to_charlist(k), String.to_charlist(v)}
     request = {String.to_charlist(url), headers}
 
-    do_request(method, request)
+    do_request(method, request, opts)
   end
 
-  defp do_request(method, request) do
-    case :httpc.request(method, request, [], body_format: :binary) do
+  defp do_request(method, request, opts) do
+    case :httpc.request(method, request, opts, body_format: :binary) do
       {:ok, {{_, status, _}, headers, body}} ->
         headers = for {k, v} <- headers, do: {List.to_string(k), List.to_string(v)}
 

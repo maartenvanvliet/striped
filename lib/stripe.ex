@@ -17,32 +17,79 @@ defmodule Stripe do
 
     headers = build_headers(client)
 
-    do_request(client, method, url, headers, "", [])
+    attempts = 1
+    opts = []
+    do_request(client, method, url, headers, "", attempts, opts)
   end
 
   def request(:post = method, path, client, params) do
     url = client.base_url <> path
 
     headers =
-      build_headers(client)
+      client
+      |> build_headers()
       |> maybe_concat(
         ["Idempotency-Key: #{generate_idempotency_key()}"],
         client.idempotency_key == nil
       )
 
     body = (params || %{}) |> UriQuery.params() |> URI.encode_query()
-    opts = []
 
-    do_request(client, method, url, headers, body, opts)
+    attempts = 1
+    opts = []
+    do_request(client, method, url, headers, body, attempts, opts)
   end
 
-  defp do_request(client, method, url, headers, body, opts) do
-    with {:ok, resp} <- client.http_client.request(method, url, headers, body, opts) do
-      case resp.status do
-        status when status >= 200 and status <= 299 -> {:ok, decode_body(resp.body)}
-        _status -> {:error, Jason.decode!(resp.body) |> build_error()}
-      end
+  defp do_request(client, method, url, headers, body, attempts, opts) do
+    case client.http_client.request(method, url, headers, body, opts) do
+      {:ok, resp} ->
+        decoded_body = Jason.decode!(resp.body)
+
+        if should_retry?(resp, attempts, client.max_network_retries, decoded_body) do
+          do_request(client, method, url, headers, body, attempts + 1, opts)
+        else
+          case resp do
+            %{status: status} when status >= 200 and status <= 299 ->
+              {:ok, convert_value(decoded_body)}
+
+            _status ->
+              {:error, decoded_body |> build_error()}
+          end
+        end
+
+      {:error, error} ->
+        if should_retry?(%{}, attempts, client.max_network_retries) do
+          do_request(client, method, url, headers, body, attempts + 1, opts)
+        else
+          {:error, error}
+        end
     end
+  end
+
+  defp should_retry?(_response, attempts, max_network_retries, decoded_body \\ %{})
+
+  defp should_retry?(_response, attempts, max_network_retries, _decoded_body)
+       when attempts >= max_network_retries do
+    false
+  end
+
+  defp should_retry?(%{status: 429}, _, _, _) do
+    true
+  end
+
+  defp should_retry?(_response, _attempts, _max_network_retries, %{code: "lock_timeout"}) do
+    true
+  end
+
+  defp should_retry?(%{headers: headers}, _attempts, _max_network_retries, _decoded_body) do
+    case headers |> List.keyfind("stripe-should-retry", 0, nil) do
+      nil -> true
+      {_, bool} -> String.to_atom(bool)
+    end
+  end
+
+  defp should_retry?(_, _, _, _) do
+    true
   end
 
   defp build_headers(client) do
@@ -65,10 +112,6 @@ defmodule Stripe do
 
   defp maybe_concat(headers, _header, false), do: headers
   defp maybe_concat(headers, header, true), do: Enum.concat(headers, header)
-
-  defp decode_body(body) when is_binary(body) do
-    body |> Jason.decode!() |> convert_value()
-  end
 
   defp convert_map(value) do
     Enum.reduce(value, %{}, fn {key, value}, acc ->
