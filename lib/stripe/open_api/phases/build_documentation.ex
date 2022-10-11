@@ -24,8 +24,6 @@ defmodule Stripe.OpenApi.Phases.BuildDocumentation do
 
      * Method: `#{operation.method}`
      * Path: `#{operation.path}`
-
-    #{build_parameters_description("Query parameters", operation.query_parameters)}
     """
   end
 

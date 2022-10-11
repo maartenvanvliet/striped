@@ -17,25 +17,52 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
 
         parameters = parameters(map["parameters"])
 
-        {path_params, query_params} =
+        path_params =
           parameters
-          |> Enum.split_with(&(&1.in == "path"))
+          |> Enum.filter(&(&1.in == "path"))
 
-        body_params =
-          map["requestBody"]["content"]["application/x-www-form-urlencoded"]["schema"][
-            "properties"
-          ] || %{}
+        query_params =
+          {:object, [],
+           (map["parameters"] || [])
+           |> Enum.filter(&(&1["in"] == "query"))
+           |> Enum.map(fn param ->
+             if param["required"] do
+               to_ast(param, name: param["name"])
+             else
+               param = Map.delete(param, "required")
+               metadata = [{:name, String.to_atom(param["name"])}]
 
-        body_params =
-          body_params
-          |> Enum.map(fn {key, value} ->
-            %OpenApiGen.Blueprint.Parameter{
-              in: "body",
-              name: key,
-              required: false,
-              schema: build_schema(value)
-            }
-          end)
+               {:nullable, metadata, [to_ast(param)]}
+             end
+           end)}
+
+        # TODO handle file upload
+        schema =
+          map["requestBody"]["content"]["application/x-www-form-urlencoded"]["schema"] || %{}
+
+        metadata = [function_name: name]
+
+        body_parameters =
+          {:object, metadata,
+           Enum.map(Map.get(schema, "properties", %{}), fn {key, value} ->
+             required = key in (schema["required"] || [])
+
+             if required do
+               to_ast(
+                 value,
+                 Keyword.merge(metadata,
+                   name: key,
+                   required: required,
+                   description: schema["description"]
+                 )
+               )
+             else
+               value = Map.delete(value, "required")
+               metadata = [{:name, String.to_atom(key)}, {:description, schema["description"]}]
+
+               {:nullable, metadata, [to_ast(value, metadata)]}
+             end
+           end)}
 
         operation = %OpenApiGen.Blueprint.Operation{
           id: map["operationId"],
@@ -46,7 +73,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
           parameters: parameters,
           path_parameters: path_params,
           query_parameters: query_params,
-          body_parameters: body_params,
+          body_parameters: body_parameters,
           path: path,
           success_response:
             response_type(map["responses"]["200"]["content"]["application/json"]["schema"])
@@ -57,6 +84,94 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
 
     blueprint = Map.put(blueprint, :operations, operations)
     {:ok, blueprint}
+  end
+
+  defp to_ast(value, metadata \\ [])
+
+  defp to_ast(%{"type" => "array"} = schema, metadata) do
+    {
+      :array,
+      [
+        name: build_name(metadata[:name]),
+        # type: value["type"] && String.to_atom(value["type"] || :unknown),
+        in: "body",
+        required: false,
+        description: schema["description"]
+      ],
+      [to_ast(schema["items"], metadata)]
+    }
+  end
+
+  defp to_ast(%{"type" => "object"} = schema, metadata) do
+    {
+      :object,
+      [
+        name: build_name(metadata[:name]),
+        description: schema["description"]
+      ],
+      Enum.map(schema["properties"] || [], fn {key, value} ->
+        required = key in (schema["required"] || [])
+
+        if required do
+          to_ast(value, Keyword.merge(metadata, name: key, required: required))
+        else
+          value = Map.delete(value, "required")
+          metadata = [{:name, String.to_atom(key)}, description: schema["description"]]
+
+          {:nullable, metadata, [to_ast(value)]}
+        end
+      end)
+    }
+  end
+
+  defp to_ast(%{"type" => "string", "enum" => enum} = schema, metadata) when enum != [""] do
+    {
+      :string,
+      [
+        name: build_name(metadata[:name]),
+        description: schema["description"],
+        enum: enum |> Enum.reject(&(&1 == "")) |> Enum.map(&String.to_atom/1)
+      ],
+      []
+    }
+  end
+
+  defp to_ast(%{"type" => type} = schema, metadata) do
+    {
+      String.to_atom(type),
+      [
+        name: build_name(metadata[:name]),
+        description: schema["description"]
+      ],
+      []
+    }
+  end
+
+  defp to_ast(%{"anyOf" => types} = schema, metadata) do
+    {
+      :any_of,
+      [
+        name: build_name(metadata[:name]),
+        description: schema["description"]
+      ],
+      Enum.map(types, &to_ast(&1, metadata))
+    }
+  end
+
+  defp to_ast(%{"schema" => schema} = _value, metadata) do
+    to_ast(schema, Keyword.put(metadata, :description, schema["description"]))
+  end
+
+  defp build_name(nil) do
+    nil
+  end
+
+  defp build_name(name) when is_binary(name) do
+    String.to_atom(name)
+  end
+
+  defp build_name(name) when is_atom(name) do
+    name
   end
 
   defp response_type(%{"$ref" => ref}), do: %OpenApiGen.Blueprint.Reference{name: ref}
@@ -97,12 +212,12 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
         in: &1["in"],
         name: &1["name"],
         required: &1["required"],
-        schema: build_schema(&1["schema"])
+        schema: build_schema(&1["schema"], &1["name"])
       }
     )
   end
 
-  defp build_schema(schema, name \\ nil)
+  defp build_schema(schema, name)
 
   defp build_schema(%{"type" => type} = schema, name)
        when type in ["string", "integer", "boolean", "number"] do
@@ -115,7 +230,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
   defp build_schema(%{"type" => "array"} = schema, name) do
     %OpenApiGen.Blueprint.Parameter.Schema{
       type: schema["type"],
-      items: build_schema(schema["items"]),
+      items: build_schema(schema["items"], name),
       name: name
     }
   end
@@ -132,7 +247,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
   defp build_schema(%{"anyOf" => any_of} = _schema, name) do
     %OpenApiGen.Blueprint.Parameter.Schema{
       type: :any_of,
-      any_of: any_of |> Enum.map(&build_schema(&1)),
+      any_of: any_of |> Enum.map(&build_schema(&1, name)),
       name: name
     }
   end
