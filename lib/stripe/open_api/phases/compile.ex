@@ -174,13 +174,6 @@ defmodule Stripe.OpenApi.Phases.Compile do
 
   defp unnest_object_types(params) do
     Macro.postwalk(params, MapSet.new(), fn
-      {:nullable, meta, [{:object, _meta, children}]}, acc ->
-        if meta[:name] == nil || children == [] do
-          {{:object, meta, children}, acc}
-        else
-          {{:ref, [name: meta[:name]], []}, MapSet.put(acc, {:object, meta, children})}
-        end
-
       {:object, meta, children}, acc ->
         if meta[:name] == nil || children == [] do
           {{:object, meta, children}, acc}
@@ -247,28 +240,32 @@ defmodule Stripe.OpenApi.Phases.Compile do
   end
 
   defp to_spec_map({:array, meta, [_type]} = ast) do
-    {meta[:name], to_type(ast)}
+    {to_name(meta), to_type(ast)}
   end
 
   defp to_spec_map({:any_of, meta, [type | tail]}) do
-    {meta[:name],
+    {to_name(meta),
      quote do
        unquote(to_type(type)) | unquote(to_type(tail))
      end}
   end
 
   defp to_spec_map({:ref, meta, _} = ast) do
-    {meta[:name], to_type(ast)}
-  end
-
-  defp to_spec_map({:nullable, meta, [type]}) do
-    {quote do
-       optional(unquote(meta[:name]))
-     end, to_type(type)}
+    {to_name(meta), to_type(ast)}
   end
 
   defp to_spec_map({_type, meta, _children} = ast) do
-    {meta[:name], to_type(ast)}
+    {to_name(meta), to_type(ast)}
+  end
+
+  defp to_name(meta) do
+    if meta[:required] do
+      meta[:name]
+    else
+      quote do
+        optional(unquote(meta[:name]))
+      end
+    end
   end
 
   def to_type([type]) do
@@ -303,12 +300,36 @@ defmodule Stripe.OpenApi.Phases.Compile do
     if metadata[:enum] do
       to_type(metadata[:enum])
     else
-      :string
+      to_type(:string)
+    end
+  end
+
+  def to_type({:object, metadata, _}) do
+    if metadata[:name] == :metadata do
+      quote do
+        %{optional(binary) => binary}
+      end
+    else
+      quote do
+        map()
+      end
     end
   end
 
   def to_type({type, _, _}) do
-    type
+    to_type(type)
+  end
+
+  def to_type(type) when type in [:boolean, :number, :integer, :float] do
+    quote do
+      unquote(Macro.var(type, __MODULE__))
+    end
+  end
+
+  def to_type(:string) do
+    quote do
+      binary
+    end
   end
 
   def to_type(type) do

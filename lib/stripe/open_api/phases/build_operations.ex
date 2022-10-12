@@ -26,14 +26,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
            (map["parameters"] || [])
            |> Enum.filter(&(&1["in"] == "query"))
            |> Enum.map(fn param ->
-             if param["required"] do
-               to_ast(param, name: param["name"])
-             else
-               param = Map.delete(param, "required")
-               metadata = [{:name, String.to_atom(param["name"])}]
-
-               {:nullable, metadata, [to_ast(param)]}
-             end
+             to_ast(param, name: param["name"], required: param["required"])
            end)}
 
         # TODO handle file upload
@@ -47,21 +40,14 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
            Enum.map(Map.get(schema, "properties", %{}), fn {key, value} ->
              required = key in (schema["required"] || [])
 
-             if required do
-               to_ast(
-                 value,
-                 Keyword.merge(metadata,
-                   name: key,
-                   required: required,
-                   description: schema["description"]
-                 )
+             to_ast(
+               value,
+               Keyword.merge(metadata,
+                 name: key,
+                 required: required,
+                 description: schema["description"]
                )
-             else
-               value = Map.delete(value, "required")
-               metadata = [{:name, String.to_atom(key)}, {:description, schema["description"]}]
-
-               {:nullable, metadata, [to_ast(value, metadata)]}
-             end
+             )
            end)}
 
         operation = %OpenApiGen.Blueprint.Operation{
@@ -86,7 +72,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
     {:ok, blueprint}
   end
 
-  defp to_ast(value, metadata \\ [])
+  defp to_ast(value, metadata)
 
   defp to_ast(%{"type" => "array"} = schema, metadata) do
     {
@@ -112,14 +98,7 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
       Enum.map(schema["properties"] || [], fn {key, value} ->
         required = key in (schema["required"] || [])
 
-        if required do
-          to_ast(value, Keyword.merge(metadata, name: key, required: required))
-        else
-          value = Map.delete(value, "required")
-          metadata = [{:name, String.to_atom(key)}, description: schema["description"]]
-
-          {:nullable, metadata, [to_ast(value)]}
-        end
+        to_ast(value, Keyword.merge(metadata, name: key, required: required))
       end)
     }
   end
