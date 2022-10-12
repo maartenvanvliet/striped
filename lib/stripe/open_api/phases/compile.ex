@@ -159,7 +159,6 @@ defmodule Stripe.OpenApi.Phases.Compile do
         quote do
           @moduledoc unquote(component.description)
           if unquote(fields) != nil do
-            @derive {Inspect, optional: unquote(fields)}
             defstruct unquote(fields)
 
             @typedoc unquote(typedoc)

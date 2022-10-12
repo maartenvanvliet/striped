@@ -41,14 +41,8 @@ Network errors etc. will be found in the error term.
 ```        
 
 ## Telemetry
-Stripe api calls made through this library emit Telemetry events.
-
-[:stripe, :request, :start] ->
-[:stripe, :request, :stop] ->
-[:stripe, :request, :exception] ->
-
-
-      
+Stripe api calls made through this library emit Telemetry events. See the 
+`Stripe.Telemetry` module for more information
 
 ### Api Version
 `Striped` uses the OpenApi definitions to build itself, so it 
