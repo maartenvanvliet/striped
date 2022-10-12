@@ -45,10 +45,11 @@ defmodule Stripe do
   defp do_request(client, method, url, headers, body, attempts, opts) do
     telemetry_event = [:stripe, :request]
     telemetry_metadata = %{attempt: attempts, method: method, url: url}
+    http_opts = opts[:http_opts] || []
 
     :telemetry.span(telemetry_event, telemetry_metadata, fn ->
       result =
-        case client.http_client.request(method, url, headers, body, opts) do
+        case client.http_client.request(method, url, headers, body, http_opts) do
           {:ok, resp} ->
             decoded_body = Jason.decode!(resp.body)
 

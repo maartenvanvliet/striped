@@ -81,7 +81,8 @@ defmodule Stripe.OpenApi.Phases.Compile do
                 @spec unquote(function_name)(
                         client :: term(),
                         unquote_splicing(argument_specs),
-                        params :: unquote(to_inline_spec(param_specs))
+                        params :: unquote(to_inline_spec(param_specs)),
+                        opts :: Keyword.t()
                       ) ::
                         {:ok, unquote(success_response_spec)}
                         | {:error, Stripe.ApiErrors.t()}
@@ -90,7 +91,8 @@ defmodule Stripe.OpenApi.Phases.Compile do
                 def unquote(function_name)(
                       client,
                       unquote_splicing(argument_names),
-                      params \\ %{}
+                      params \\ %{},
+                      opts \\ []
                     ) do
                   path =
                     Stripe.OpenApi.Path.replace_path_params(
@@ -99,16 +101,21 @@ defmodule Stripe.OpenApi.Phases.Compile do
                       unquote(argument_values)
                     )
 
-                  Stripe.request(@operation.method, path, client, params || %{})
+                  Stripe.request(@operation.method, path, client, params, opts)
                 end
               else
-                @spec unquote(function_name)(client :: term(), unquote_splicing(argument_specs)) ::
+                @spec unquote(function_name)(
+                        client :: term(),
+                        unquote_splicing(argument_specs),
+                        opts :: Keyword.t()
+                      ) ::
                         {:ok, unquote(success_response_spec)}
                         | {:error, Stripe.ApiErrors.t()}
                         | {:error, term()}
                 def unquote(function_name)(
                       client,
-                      unquote_splicing(argument_names)
+                      unquote_splicing(argument_names),
+                      opts \\ []
                     ) do
                   path =
                     Stripe.OpenApi.Path.replace_path_params(
@@ -117,7 +124,7 @@ defmodule Stripe.OpenApi.Phases.Compile do
                       unquote(argument_values)
                     )
 
-                  Stripe.request(@operation.method, path, client, %{})
+                  Stripe.request(@operation.method, path, client, %{}, opts)
                 end
               end
             end

@@ -7,17 +7,24 @@ defmodule Stripe.TaxIdTest do
              {:__struct__, 1},
              {:cancel, 2},
              {:cancel, 3},
+             {:cancel, 4},
              {:create, 1},
              {:create, 2},
+             {:create, 3},
              {:delete_discount, 2},
+             {:delete_discount, 3},
              {:list, 1},
              {:list, 2},
+             {:list, 3},
              {:retrieve, 2},
              {:retrieve, 3},
+             {:retrieve, 4},
              {:search, 1},
              {:search, 2},
+             {:search, 3},
              {:update, 2},
-             {:update, 3}
+             {:update, 3},
+             {:update, 4}
            ] = Stripe.Subscription.__info__(:functions)
   end
 
