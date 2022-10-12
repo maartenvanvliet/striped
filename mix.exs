@@ -205,7 +205,8 @@ defmodule Striped.MixProject do
       {:jason, "~> 1.3.0"},
       {:ex_doc, "~> 0.28"},
       {:uri_query, "~> 0.1.2"},
-      {:mox, "~> 1.0", only: :test}
+      {:mox, "~> 1.0", only: :test},
+      {:telemetry, "~> 1.1"}
     ]
   end
 end

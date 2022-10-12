@@ -38,8 +38,7 @@ defmodule Stripe.SubscriptionsTest do
       client =
         Stripe.new(
           api_key: "sk_test_123",
-          base_url: "http://localhost:12111",
-          http_client: Stripe.HTTPClient.HTTPC
+          base_url: "http://localhost:12111"
         )
 
       assert {:ok, %Stripe.Subscription{}} =
@@ -51,13 +50,11 @@ defmodule Stripe.SubscriptionsTest do
                })
     end
 
-    @tag :p
     test "fails" do
       client =
         Stripe.new(
           api_key: "sk_test_123",
-          base_url: "http://localhost:12111",
-          http_client: Stripe.HTTPClient.HTTPC
+          base_url: "http://localhost:12111"
         )
 
       assert {:error, %Stripe.ApiErrors{}} = Stripe.Subscription.create(client, %{})

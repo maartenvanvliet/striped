@@ -1,7 +1,7 @@
 defmodule Stripe.Case do
-  defmacro __using__(_opts) do
+  defmacro __using__(opts \\ [async: true]) do
     quote do
-      use ExUnit.Case, async: true
+      use ExUnit.Case, unquote(opts)
       import Stripe.Case
     end
   end

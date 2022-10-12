@@ -11,18 +11,20 @@ defmodule Stripe do
       |> Path.join(),
     base_url: "https://api.stripe.com"
 
-  def request(method, path, client, params) when method in [:get, :delete] do
+  def request(method, path, client, params, opts \\ [])
+
+  def request(method, path, client, params, opts) when method in [:get, :delete] do
     query = (params || %{}) |> UriQuery.params() |> URI.encode_query()
     url = URI.parse(client.base_url <> path) |> URI.append_query(query) |> URI.to_string()
 
     headers = build_headers(client)
 
     attempts = 1
-    opts = []
-    do_request(client, method, url, headers, "", attempts, opts)
+
+    do_request(client, method, url, headers, "", attempts, opts) |> Tuple.delete_at(2)
   end
 
-  def request(:post = method, path, client, params) do
+  def request(:post = method, path, client, params, opts) do
     url = client.base_url <> path
 
     headers =
@@ -36,34 +38,56 @@ defmodule Stripe do
     body = (params || %{}) |> UriQuery.params() |> URI.encode_query()
 
     attempts = 1
-    opts = []
-    do_request(client, method, url, headers, body, attempts, opts)
+
+    do_request(client, method, url, headers, body, attempts, opts) |> Tuple.delete_at(2)
   end
 
   defp do_request(client, method, url, headers, body, attempts, opts) do
-    case client.http_client.request(method, url, headers, body, opts) do
-      {:ok, resp} ->
-        decoded_body = Jason.decode!(resp.body)
+    telemetry_event = [:stripe, :request]
+    telemetry_metadata = %{attempt: attempts, method: method, url: url}
 
-        if should_retry?(resp, attempts, client.max_network_retries, decoded_body) do
-          do_request(client, method, url, headers, body, attempts + 1, opts)
-        else
-          case resp do
-            %{status: status} when status >= 200 and status <= 299 ->
-              {:ok, convert_value(decoded_body)}
+    :telemetry.span(telemetry_event, telemetry_metadata, fn ->
+      result =
+        case client.http_client.request(method, url, headers, body, opts) do
+          {:ok, resp} ->
+            decoded_body = Jason.decode!(resp.body)
 
-            _status ->
-              {:error, decoded_body |> build_error()}
-          end
+            if should_retry?(resp, attempts, client.max_network_retries, decoded_body) do
+              do_request(client, method, url, headers, body, attempts + 1, opts)
+            else
+              case resp do
+                %{status: status, headers: headers} when status >= 200 and status <= 299 ->
+                  {:ok, convert_value(decoded_body),
+                   %{request_id: extract_request_id(headers), status: status}}
+
+                _ ->
+                  {:error, build_error(decoded_body),
+                   %{request_id: extract_request_id(headers), status: resp.status}}
+              end
+            end
+
+          {:error, error} ->
+            if should_retry?(%{}, attempts, client.max_network_retries) do
+              do_request(client, method, url, headers, body, attempts + 1, opts)
+            else
+              {:error, error, %{}}
+            end
         end
 
-      {:error, error} ->
-        if should_retry?(%{}, attempts, client.max_network_retries) do
-          do_request(client, method, url, headers, body, attempts + 1, opts)
-        else
-          {:error, error}
+      extra_telemetry_metadata =
+        case result do
+          {:ok, _, extra} -> Map.put(extra, :result, :ok)
+          {:error, error, extra} -> Map.merge(extra, %{result: :error, error: error})
         end
-    end
+
+      telemetry_metadata = Map.merge(telemetry_metadata, extra_telemetry_metadata)
+
+      {result, telemetry_metadata}
+    end)
+  end
+
+  defp extract_request_id(headers) do
+    List.keyfind(headers, "request-id", 0, {nil, nil}) |> elem(1)
   end
 
   defp should_retry?(_response, attempts, max_network_retries, decoded_body \\ %{})
