@@ -193,7 +193,7 @@ defmodule Striped.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :inets]
+      extra_applications: [:logger, :inets, :public_key, :ssl]
     ]
   end
 
@@ -206,7 +206,8 @@ defmodule Striped.MixProject do
       {:ex_doc, "~> 0.28"},
       {:uri_query, "~> 0.1.2"},
       {:mox, "~> 1.0", only: :test},
-      {:telemetry, "~> 1.1"}
+      {:telemetry, "~> 1.1"},
+      {:castore, "~> 0.1.18", optional: true}
     ]
   end
 end
