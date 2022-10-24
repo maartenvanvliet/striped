@@ -11,6 +11,17 @@ defmodule Stripe.OpenApi do
 
       Stripe.OpenApi.run(@pipeline)
 
+      @typedoc "Stripe config"
+      @type t :: %__MODULE__{
+              version: binary(),
+              api_key: binary(),
+              idempotency_key: nil | binary(),
+              max_network_retries: pos_integer(),
+              user_agent: binary(),
+              base_url: binary(),
+              http_client: term
+            }
+
       defstruct [
         :version,
         :api_key,
@@ -38,6 +49,7 @@ defmodule Stripe.OpenApi do
       Stripe.Customer.create(client, %{description: "a description"})
 
       """
+      @spec new(Keyword.t()) :: __MODULE__.t()
       def new(opts) do
         client = struct!(__MODULE__, opts)
         client.http_client.init()

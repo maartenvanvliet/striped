@@ -79,7 +79,7 @@ defmodule Stripe.OpenApi.Phases.Compile do
 
               if unquote(params?) do
                 @spec unquote(function_name)(
-                        client :: term(),
+                        client :: Stripe.t(),
                         unquote_splicing(argument_specs),
                         params :: unquote(to_inline_spec(param_specs)),
                         opts :: Keyword.t()
@@ -105,7 +105,7 @@ defmodule Stripe.OpenApi.Phases.Compile do
                 end
               else
                 @spec unquote(function_name)(
-                        client :: term(),
+                        client :: Stripe.t(),
                         unquote_splicing(argument_specs),
                         opts :: Keyword.t()
                       ) ::

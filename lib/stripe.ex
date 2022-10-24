@@ -11,6 +11,18 @@ defmodule Stripe do
       |> Path.join(),
     base_url: "https://api.stripe.com"
 
+  @doc """
+  Perform Stripe API requests.
+
+
+  """
+  @spec request(
+          method :: binary(),
+          path :: binary(),
+          client :: Stripe.t(),
+          params :: map(),
+          opts :: Keyword.t()
+        ) :: {:ok, term} | {:error, Stripe.ApiErrors.t()} | {:error, term()}
   def request(method, path, client, params, opts \\ [])
 
   def request(method, path, client, params, opts) when method in [:get, :delete] do
