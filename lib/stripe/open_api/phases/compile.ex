@@ -158,6 +158,7 @@ defmodule Stripe.OpenApi.Phases.Compile do
       body =
         quote do
           @moduledoc unquote(component.description)
+          @moduledoc tags: :generated
           if unquote(fields) != nil do
             defstruct unquote(fields)
 

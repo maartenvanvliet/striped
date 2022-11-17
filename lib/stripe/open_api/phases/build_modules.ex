@@ -3,7 +3,6 @@ defmodule Stripe.OpenApi.Phases.BuildModules do
   def run(blueprint, _options \\ []) do
     components =
       for {name, map} <- blueprint.source["components"]["schemas"],
-          # map["x-stripeOperations"] != nil,
           map["x-resourceId"] != nil || name == "api_errors",
           into: %{} do
         resource =
@@ -12,7 +11,7 @@ defmodule Stripe.OpenApi.Phases.BuildModules do
         {name,
          %OpenApiGen.Blueprint.Schema{
            name: name,
-           description: map["description"],
+           description: fix_links(map["description"] || ""),
            operations:
              (map["x-stripeOperations"] || [])
              |> Enum.uniq_by(& &1["method_name"])
@@ -25,5 +24,9 @@ defmodule Stripe.OpenApi.Phases.BuildModules do
       end
 
     {:ok, %{blueprint | components: components}}
+  end
+
+  defp fix_links(docs) do
+    Regex.replace(~r{\(/(docs|guides|radar)}m, docs, "(https://stripe.com/\\1")
   end
 end
