@@ -1,19 +1,19 @@
 defmodule Stripe do
-  @external_resource "README.md"
-  @moduledoc @external_resource
-             |> File.read!()
-             |> String.split("<!-- MDOC !-->")
-             |> Enum.fetch!(1)
-
   use Stripe.OpenApi,
     path:
       [:code.priv_dir(:striped), "openapi", "spec3.sdk.json"]
       |> Path.join(),
     base_url: "https://api.stripe.com"
 
+  @external_resource "README.md"
+  @moduledoc @external_resource
+             |> File.read!()
+             |> String.split("<!-- MDOC !-->")
+             |> Enum.fetch!(1)
+             |> String.replace("__VERSION__", @version)
+
   @doc """
   Perform Stripe API requests.
-
 
   """
   @spec request(

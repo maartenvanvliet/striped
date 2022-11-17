@@ -9,7 +9,9 @@ defmodule Stripe.OpenApi do
     quote do
       @pipeline Stripe.OpenApi.pipeline(unquote(opts))
 
-      Stripe.OpenApi.run(@pipeline)
+      {:ok, blueprint} = Stripe.OpenApi.run(@pipeline)
+
+      @version blueprint.api_version
 
       @typedoc "Stripe config"
       @type t :: %__MODULE__{
@@ -64,7 +66,8 @@ defmodule Stripe.OpenApi do
       {OpenApi.Phases.BuildModules, options},
       {OpenApi.Phases.BuildOperations, options},
       {OpenApi.Phases.BuildDocumentation, options},
-      {OpenApi.Phases.Compile, options}
+      {OpenApi.Phases.Compile, options},
+      {OpenApi.Phases.Version, options}
     ]
   end
 

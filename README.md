@@ -49,6 +49,10 @@ Stripe api calls made through this library emit Telemetry events. See the
 uses the latest Api Version. You can however override the 
 version by passing the `:version` option to the client.
 
+This SDK is generated for version: **__VERSION__**
+
+See https://stripe.com/docs/upgrades#__VERSION__ for breaking changes
+
 ### Limitations
 
   * File Uploads currently don't work. 
