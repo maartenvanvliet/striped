@@ -67,9 +67,7 @@ defmodule Striped.MixProject do
             Stripe.ShippingRate
           ],
           Checkout: [
-            Stripe.Checkout.Session,
-            Stripe.Order,
-            Stripe.Sku
+            Stripe.Checkout.Session
           ],
           "Payment Links": [
             Stripe.PaymentLink
