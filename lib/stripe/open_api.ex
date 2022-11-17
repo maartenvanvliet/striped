@@ -49,7 +49,7 @@ defmodule Stripe.OpenApi do
       ```elixir
       client = Stripe.new()
       Stripe.Customer.create(client, %{description: "a description"})
-
+      ```
       """
       @spec new(Keyword.t()) :: __MODULE__.t()
       def new(opts) do

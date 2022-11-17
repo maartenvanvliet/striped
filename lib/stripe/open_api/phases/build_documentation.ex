@@ -15,7 +15,7 @@ defmodule Stripe.OpenApi.Phases.BuildDocumentation do
   end
 
   defp do_build_description(operation) do
-    description = operation.description
+    description = fix_tags(operation.description)
 
     """
     #{description}
@@ -25,5 +25,9 @@ defmodule Stripe.OpenApi.Phases.BuildDocumentation do
      * Method: `#{operation.method}`
      * Path: `#{operation.path}`
     """
+  end
+
+  defp fix_tags(docs) do
+    Regex.replace(~r{.<\/p>}m, docs, ".\n</p>")
   end
 end
