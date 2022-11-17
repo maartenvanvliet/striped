@@ -11,7 +11,7 @@ Inspiration was drawn from [Stripity Stripe](https://github.com/beam-community/s
 ```elixir
 def deps do
   [
-    {:striped, "~> 0.1.0"}
+    {:striped, "~> 0.5.0"}
   ]
 end
 ```
@@ -51,7 +51,7 @@ version by passing the `:version` option to the client.
 
 This SDK is generated for version: **__VERSION__**
 
-See https://stripe.com/docs/upgrades#__VERSION__ for breaking changes
+See https://stripe.com/docs/upgrades#__VERSION__ for breaking changes.
 
 ### Limitations
 
