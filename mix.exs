@@ -174,7 +174,6 @@ defmodule Striped.MixProject do
             Stripe.DeletedProduct,
             Stripe.DeletedRadar.ValueList,
             Stripe.DeletedRadar.ValueListItem,
-            Stripe.DeletedSku,
             Stripe.DeletedSubscriptionItem,
             Stripe.DeletedTaxId,
             Stripe.DeletedTerminal.Configuration,
