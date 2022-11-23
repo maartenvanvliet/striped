@@ -76,7 +76,7 @@ defmodule Stripe.OpenApi.Phases.Compile do
 
               @operation unquote(Macro.escape(operation_definition))
               @doc unquote(operation_definition.description)
-
+              @doc generated: true
               if unquote(params?) do
                 @spec unquote(function_name)(
                         client :: Stripe.t(),

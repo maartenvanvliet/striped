@@ -25,6 +25,7 @@ defmodule Striped.MixProject do
         main: "Stripe",
         source_url: @url,
         canonical: "http://hexdocs.pm/striped",
+        annotations_for_docs: fn metadata -> (metadata[:generated] && [:generated]) || [] end,
         groups_for_modules: [
           "Core Resources": [
             Stripe.Balance,
