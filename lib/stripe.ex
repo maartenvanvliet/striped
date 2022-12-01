@@ -51,7 +51,8 @@ defmodule Stripe do
 
     attempts = 1
 
-    do_request(client, method, url, headers, body, attempts, opts) |> Tuple.delete_at(2)
+    {code, value, _opts} = do_request(client, method, url, headers, body, attempts, opts)
+    {code, value}
   end
 
   defp do_request(client, method, url, headers, body, attempts, opts) do
@@ -65,6 +66,10 @@ defmodule Stripe do
             decoded_body = Jason.decode!(resp.body)
 
             if should_retry?(resp, attempts, client.max_network_retries, decoded_body) do
+              attempts
+              |> backoff(client)
+              |> :timer.sleep()
+
               do_request(client, method, url, headers, body, attempts + 1, opts)
             else
               case resp do
@@ -96,6 +101,21 @@ defmodule Stripe do
 
       {result, telemetry_metadata}
     end)
+  end
+
+  def backoff(attempts, client) do
+    base_backoff = client.base_backoff
+    max_backoff = client.max_backoff
+
+    (base_backoff * Integer.pow(2, attempts))
+    |> min(max_backoff)
+    |> backoff_jitter()
+    |> max(base_backoff)
+    |> trunc()
+  end
+
+  defp backoff_jitter(n) do
+    n * (0.5 * (1 + :rand.uniform()))
   end
 
   defp extract_request_id(headers) do

@@ -19,6 +19,8 @@ defmodule Stripe.OpenApi do
               api_key: binary(),
               idempotency_key: nil | binary(),
               max_network_retries: pos_integer(),
+              base_backoff: pos_integer,
+              max_backoff: pos_integer,
               user_agent: binary(),
               base_url: binary(),
               http_client: term
@@ -29,6 +31,8 @@ defmodule Stripe.OpenApi do
         :api_key,
         idempotency_key: nil,
         max_network_retries: 3,
+        base_backoff: 500,
+        max_backoff: 2_000,
         user_agent: "striped",
         base_url: unquote(opts[:base_url]),
         http_client: Stripe.HTTPClient.HTTPC
