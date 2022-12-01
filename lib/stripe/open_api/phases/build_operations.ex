@@ -31,7 +31,8 @@ defmodule Stripe.OpenApi.Phases.BuildOperations do
 
         # TODO handle file upload
         schema =
-          map["requestBody"]["content"]["application/x-www-form-urlencoded"]["schema"] || %{}
+          map["requestBody"]["content"]["application/x-www-form-urlencoded"]["schema"] ||
+            map["requestBody"]["content"]["multipart/form-data"]["schema"]
 
         metadata = [function_name: name]
 
