@@ -9,7 +9,8 @@ defmodule Stripe.TelemetryTest do
     client =
       Stripe.new(
         api_key: "sk_test_123",
-        http_client: TestClient
+        http_client: TestClient,
+        base_backoff: 0
       )
 
     %{client: client}

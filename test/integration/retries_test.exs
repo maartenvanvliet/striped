@@ -9,7 +9,9 @@ defmodule Stripe.RetriesTest do
     client =
       Stripe.new(
         api_key: "sk_test_123",
-        http_client: TestClient
+        http_client: TestClient,
+        base_backoff: 0,
+        max_backoff: 100
       )
 
     %{client: client}
@@ -124,7 +126,9 @@ defmodule Stripe.RetriesTest do
       Stripe.new(
         api_key: "sk_test_123",
         http_client: TestClient,
-        max_network_retries: 10
+        max_network_retries: 10,
+        base_backoff: 0,
+        max_backoff: 10
       )
 
     expect(TestClient, :request, 10, fn _method, _url, _headers, _body, _opts ->

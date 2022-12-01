@@ -137,7 +137,25 @@ defmodule Stripe do
     true
   end
 
-  defp should_retry?(%{headers: headers}, _attempts, _max_network_retries, _decoded_body) do
+  defp should_retry?(
+         %{headers: headers, status: status},
+         _attempts,
+         _max_network_retries,
+         _decoded_body
+       )
+       when status >= 200 and status <= 499 do
+    case headers |> List.keyfind("stripe-should-retry", 0, nil) do
+      nil -> false
+      {_, bool} -> String.to_atom(bool)
+    end
+  end
+
+  defp should_retry?(
+         %{headers: headers},
+         _attempts,
+         _max_network_retries,
+         _decoded_body
+       ) do
     case headers |> List.keyfind("stripe-should-retry", 0, nil) do
       nil -> true
       {_, bool} -> String.to_atom(bool)

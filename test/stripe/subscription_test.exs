@@ -61,7 +61,8 @@ defmodule Stripe.SubscriptionsTest do
       client =
         Stripe.new(
           api_key: "sk_test_123",
-          base_url: "http://localhost:12111"
+          base_url: "http://localhost:12111",
+          base_backoff: 0
         )
 
       assert {:error, %Stripe.ApiErrors{}} = Stripe.Subscription.create(client, %{})
